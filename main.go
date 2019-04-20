@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -22,13 +23,14 @@ type Repository struct {
 }
 
 func main() {
+	godotenv.Load(".env")
 	router := mux.NewRouter().StrictSlash(true)
 	router.
 		Methods("POST").
-		Path("/").
+		Path(os.Getenv("path_to_hook")).
 		HandlerFunc(pushEvent)
 
-	log.Fatal(http.ListenAndServe(":80", router))
+	log.Fatal(http.ListenAndServe(os.Getenv("host")+":"+os.Getenv("port"), router))
 }
 
 func pushEvent(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +39,7 @@ func pushEvent(w http.ResponseWriter, r *http.Request) {
 	var msg Message
 	json.Unmarshal(body, &msg)
 	json, _ := json.Marshal(msg.Repository)
-	f, err := os.OpenFile("git.json", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	f, err := os.OpenFile(os.Getenv("json_file"), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		log.Println(err)
 	}
